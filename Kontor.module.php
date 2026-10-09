@@ -52,7 +52,7 @@ class Kontor extends WireData implements Module
         return [
             'title' => 'Kontor',
             'summary' => 'Open-source modular ERP, CRM and business operations platform.',
-            'version' => '100',
+            'version' => '110',
             'author' => 'Maxim Semenov',
             'href' => 'https://github.com/mxmsmnv/Kontor',
             'icon' => 'cubes',

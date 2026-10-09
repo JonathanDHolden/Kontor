@@ -1,6 +1,6 @@
 # Kontor Public API
 
-This document describes the supported public integration surface for Kontor 1.0.0 (ProcessWire module version 100). The installed code and live site state still determine availability.
+This document describes the supported public integration surface for Kontor 1.1.0 (ProcessWire module version 110). The installed code and live site state still determine availability.
 
 ## Module Access
 
@@ -62,6 +62,8 @@ The following public module methods are the supported PHP entry points. Returned
 | `KontorMCP` | `mcpProviderInfo()`, `mcpTools()`; tool callbacks are invoked by the MCP host |
 
 Methods not listed here should be treated as unstable until verified and documented. Exact signatures are authoritative in the installed module version.
+
+`KontorDocuments::renderService()` supports `renderBody()`, `renderPreviewHtml()`, `renderPdf()`, and `fields()`. Shared sections use `{{> template.key}}`; resolution is restricted to the current organization and requested template language (with the documented English fallback), rejects missing or circular sections, and is capped at three nested includes.
 
 ## HTTP and Agent Surfaces
 

@@ -29,7 +29,7 @@ class KontorDocuments extends WireData implements Module
         return [
             'title' => 'Kontor Documents',
             'summary' => 'Document templates, HTML/PDF rendering, multilingual output, immutable issued-document snapshots.',
-            'version' => '100',
+            'version' => '110',
             'author' => 'Maxim Semenov',
             'href' => 'https://github.com/mxmsmnv/KontorDocuments',
             'icon' => 'file-pdf-o',
@@ -84,7 +84,11 @@ class KontorDocuments extends WireData implements Module
 
     public function renderService(): DocumentRenderService
     {
-        return new DocumentRenderService($this->templateEngine(), $this->pdfRenderer());
+        return new DocumentRenderService(
+            $this->templateEngine(),
+            $this->pdfRenderer(),
+            $this->templateRepository(),
+        );
     }
 
     public function snapshotBuilder(): DocumentSnapshotBuilder

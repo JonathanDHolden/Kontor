@@ -20,6 +20,8 @@
 /** @var callable $e */
 $aiReady = $aiReady ?? false;
 $aiSummary = $aiSummary ?? null;
+$companyFiles = $companyFiles ?? [];
+$canViewCompanyFiles = $canViewCompanyFiles ?? false;
 if ($entityType === 'contact') {
     require __DIR__ . '/contact-form.php';
     return;
@@ -52,6 +54,26 @@ if ($entityType === 'contact') {
   <?= $form->render() ?>
 
   <?php if ($entity !== null): ?>
+    <?php if ($entityType === 'company' && $canViewCompanyFiles): ?>
+      <section class="uk-card uk-card-default uk-card-small uk-card-body kontor-card">
+        <div class="kontor-sectionhead">
+          <div><p class="kontor-eyebrow">Documents</p><h3>Company files</h3></div>
+          <span class="kontor-secondary"><?= $e(count($companyFiles)) ?> linked</span>
+        </div>
+        <?php if ($companyFiles !== []): ?>
+          <ul class="uk-list uk-list-divider uk-margin-remove-bottom">
+            <?php foreach ($companyFiles as $file): ?>
+              <li class="uk-flex uk-flex-between uk-flex-middle uk-grid-small" uk-grid>
+                <div class="uk-width-expand"><strong><?= $e((string) $file['original_name']) ?></strong><span class="uk-display-block uk-text-meta">PDF · <?= $e(number_format((int) $file['size_bytes'] / 1024, 1)) ?> KB</span></div>
+                <div class="uk-width-auto"><a class="uk-button uk-button-default uk-button-small" href="<?= $e($adminUrl) ?>files/?id=<?= $e(rawurlencode((string) $file['uid'])) ?>">Open file</a></div>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php else: ?>
+          <p class="kontor-secondary uk-margin-remove-bottom">No documents are linked to this company yet.</p>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
     <?php if ($workspace['available']): ?>
       <section class="uk-card uk-card-default uk-card-small uk-card-body kontor-card">
         <header class="kontor-sectionhead uk-flex-wrap uk-grid-small" uk-grid>

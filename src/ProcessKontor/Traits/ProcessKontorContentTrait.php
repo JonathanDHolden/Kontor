@@ -49,6 +49,7 @@ use Kontor\Core\Infrastructure\ImportExport\FormatResolver;
 use Kontor\Core\Infrastructure\Persistence\AuditEventRepository;
 use Kontor\Core\Infrastructure\Persistence\OrganizationRepository;
 use Kontor\Core\Infrastructure\Registry\ComponentRegistry;
+use Kontor\Documents\Application\DocumentFileName;
 use Kontor\Expenses\Domain\Expense;
 use Kontor\Expenses\Domain\ExpenseCategory;
 use Kontor\Expenses\Application\LedgerExpensePostingService;
@@ -245,6 +246,8 @@ trait ProcessKontorContentTrait
             : $this->_('Kontor · Documents'));
 
         $filesReady = $this->wire()->modules->isInstalled('KontorFiles');
+        $dynamicPreview = $selected !== null && in_array($selected->documentType, ['letter', 'contract'], true);
+        $contactsReady = $this->contactsReady() && $this->can('kontor-contacts-company-view');
 
         return $this->renderTemplate('documents', [
             'templates' => $module->templateRepository()->forOrganization($this->organizationUid()),
@@ -255,6 +258,11 @@ trait ProcessKontorContentTrait
             'canArchive' => $this->can('kontor-documents-template-archive'),
             'canRender' => $filesReady && $this->can('kontor-documents-render'),
             'filesReady' => $filesReady,
+            'templateFields' => $dynamicPreview ? $module->renderService()->fields($selected) : [],
+            'companies' => $contactsReady
+                ? $this->companyRepository()->findAll($this->organizationUid(), limit: 250)
+                : [],
+            'contactsReady' => $contactsReady,
         ]);
     }
 
@@ -329,6 +337,7 @@ trait ProcessKontorContentTrait
         if (strlen($rawData) > 262144) {
             throw new WireException($this->_('Advanced preview data must be at most 256 KB.'));
         }
+        $renderer = $this->documentsModule()->renderService();
         if ($rawData !== '') {
             try {
                 $data = json_decode($rawData, true, flags: JSON_THROW_ON_ERROR);
@@ -337,6 +346,30 @@ trait ProcessKontorContentTrait
             }
             if (!is_array($data)) {
                 throw new WireException($this->_('Advanced preview data must be a JSON object or array.'));
+            }
+        } elseif (in_array($template->documentType, ['letter', 'contract'], true)) {
+            $allowedFields = $renderer->fields($template);
+            $fieldKeys = (array) $this->wire()->input->post('field_key');
+            $fieldValues = (array) $this->wire()->input->post('field_value');
+            if (count($fieldKeys) > 100 || count($fieldKeys) !== count($fieldValues)) {
+                throw new WireException($this->_('The document fields are invalid.'));
+            }
+            $data = [];
+            $fieldBytes = 0;
+            foreach ($fieldKeys as $index => $fieldKey) {
+                $fieldKey = (string) $fieldKey;
+                if (!in_array($fieldKey, $allowedFields, true)) {
+                    throw new WireException($this->_('The document contains an unexpected field.'));
+                }
+                $value = trim($this->wire()->sanitizer->textarea((string) ($fieldValues[$index] ?? '')));
+                if (strlen($value) > 10000) {
+                    throw new WireException($this->_('A document field exceeds the 10 KB limit.'));
+                }
+                $fieldBytes += strlen($value);
+                if ($fieldBytes > 262144) {
+                    throw new WireException($this->_('Document fields must be at most 256 KB in total.'));
+                }
+                $this->setDocumentDataValue($data, $fieldKey, $value);
             }
         } else {
             $title = trim($this->wire()->sanitizer->text(
@@ -367,23 +400,51 @@ trait ProcessKontorContentTrait
                 'note' => $note !== '' ? mb_substr($note, 0, 1000) : null,
             ];
         }
-        $renderer = $this->documentsModule()->renderService();
+        $companyUid = $this->wire()->sanitizer->text(
+            (string) $this->wire()->input->post('company_uid')
+        );
+        $company = null;
+        if ($companyUid !== '') {
+            if (!in_array($template->documentType, ['letter', 'contract'], true)) {
+                throw new WireException($this->_('Only letters and contracts can be linked directly to a company.'));
+            }
+            if (!$this->contactsReady()) {
+                throw new WireException($this->_('Kontor Contacts is required to link a company.'));
+            }
+            $this->requirePermission('kontor-contacts-company-view');
+            $company = $this->companyRepository()->require($companyUid);
+            $this->requireSameOrganization($company->organizationId);
+            if ($this->documentDataValue($data, 'client_name') === null
+                || trim((string) $this->documentDataValue($data, 'client_name')) === '') {
+                $this->setDocumentDataValue($data, 'client_name', $company->tradingName ?: $company->legalName);
+            }
+        }
         $snapshot = $this->documentsModule()->snapshotBuilder()->build($template, $data);
         $pdf = $renderer->renderPdf($template, $data);
         $filenameStem = preg_replace('/[^A-Za-z0-9._-]/', '-', $template->templateKey) ?: 'document';
+        if ($company !== null) {
+            $originalName = DocumentFileName::forCompany(
+                $template->templateKey,
+                $company->tradingName ?: $company->legalName,
+                new \DateTimeImmutable(),
+            );
+        } else {
+            $originalName = $filenameStem . '-v' . $template->versionNumber . '.pdf';
+        }
         $stored = $this->filesModule()->fileManager()->upload(
             organizationUid: $this->organizationUid(),
-            originalName: $filenameStem . '-v' . $template->versionNumber . '.pdf',
+            originalName: $originalName,
             contents: $pdf,
             visibility: 'private',
             classification: 'confidential',
-            entityType: 'document_template',
-            entityUid: $template->uid->toString(),
+            entityType: $company !== null ? 'company' : 'document_template',
+            entityUid: $company?->uid->toString() ?? $template->uid->toString(),
             metadata: [
                 'source' => 'documents',
                 'documentType' => $template->documentType,
                 'templateKey' => $template->templateKey,
                 'documentSnapshot' => $snapshot,
+                'companyUid' => $company?->uid->toString(),
             ],
             actorId: (int) $this->wire()->user->id,
         );
@@ -409,6 +470,34 @@ trait ProcessKontorContentTrait
         ]);
         $this->message($this->_('HTML, PDF, and immutable snapshot rendered; the PDF was stored privately.'));
         $this->wire()->session->redirect('../documents/?id=' . rawurlencode($uid));
+    }
+
+    /** @param array<string, mixed> $data */
+    private function setDocumentDataValue(array &$data, string $path, string $value): void
+    {
+        $segments = explode('.', $path);
+        $target =& $data;
+        foreach ($segments as $segment) {
+            if (!isset($target[$segment]) || !is_array($target[$segment])) {
+                $target[$segment] = [];
+            }
+            $target =& $target[$segment];
+        }
+        $target = $value;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function documentDataValue(array $data, string $path): mixed
+    {
+        $value = $data;
+        foreach (explode('.', $path) as $segment) {
+            if (!is_array($value) || !array_key_exists($segment, $value)) {
+                return null;
+            }
+            $value = $value[$segment];
+        }
+
+        return $value;
     }
 
     public function ___executeDocumentsArchive(): void

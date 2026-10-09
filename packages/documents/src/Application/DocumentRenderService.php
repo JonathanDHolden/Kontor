@@ -7,21 +7,22 @@ namespace Kontor\Documents\Application;
 use Kontor\Documents\Domain\DocumentTemplate;
 use Kontor\Documents\Infrastructure\Rendering\PdfRenderer;
 use Kontor\Documents\Infrastructure\Rendering\TemplateEngine;
+use Kontor\Documents\Infrastructure\Persistence\TemplateRepository;
 
 /**
  * Turns a DocumentTemplate + data array into HTML (preview) or PDF (the
- * "PDF" milestone) output. Deliberately has no persistence dependency —
- * resolving *which* template version to render is TemplateRepository's job
- * (::findCurrentVersion(), including the English-fallback rule); this class
- * only renders a template object it's handed. Never mutates anything —
- * persisting the result as an immutable issued snapshot is
- * DocumentSnapshotBuilder's job, layered on top of this one.
+ * "PDF" milestone) output. The optional repository resolves shared sections
+ * within the root template's organization and language; callers still choose
+ * the root template version. The service never mutates anything — persisting
+ * the result as an immutable issued snapshot is DocumentSnapshotBuilder's
+ * job, layered on top of this one.
  */
 final class DocumentRenderService
 {
     public function __construct(
         private readonly TemplateEngine $engine,
         private readonly PdfRenderer $pdf,
+        private readonly ?TemplateRepository $templates = null,
     ) {
     }
 
@@ -30,7 +31,13 @@ final class DocumentRenderService
      */
     public function renderBody(DocumentTemplate $template, array $data): string
     {
-        return $this->engine->render($template->bodyHtml, $data);
+        return $this->engine->render($template->bodyHtml, $data, $this->partialResolver($template));
+    }
+
+    /** @return string[] */
+    public function fields(DocumentTemplate $template): array
+    {
+        return $this->engine->fields($template->bodyHtml, $this->partialResolver($template));
     }
 
     /**
@@ -53,5 +60,20 @@ final class DocumentRenderService
     public function renderPdf(DocumentTemplate $template, array $data): string
     {
         return $this->pdf->render($this->renderBody($template, $data), $template->customCss);
+    }
+
+    private function partialResolver(DocumentTemplate $template): ?callable
+    {
+        if ($this->templates === null) {
+            return null;
+        }
+
+        return function (string $templateKey) use ($template): ?string {
+            return $this->templates->findCurrentVersion(
+                $template->organizationId,
+                $templateKey,
+                $template->language,
+            )?->bodyHtml;
+        };
     }
 }

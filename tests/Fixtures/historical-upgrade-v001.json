@@ -1,6 +1,6 @@
 [
-  {"moduleName":"Kontor","modulePath":"Kontor.module.php","component":"core","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
-  {"moduleName":"ProcessKontor","modulePath":"ProcessKontor.module.php","component":null,"sourceVersion":"001","targetVersion": "100","upgradeHookRequired":false,"pendingMigrations":[]},
+  {"moduleName":"Kontor","modulePath":"Kontor.module.php","component":"core","sourceVersion":"001","targetVersion": "110","upgradeHookRequired":true,"pendingMigrations":[]},
+  {"moduleName":"ProcessKontor","modulePath":"ProcessKontor.module.php","component":null,"sourceVersion":"001","targetVersion": "110","upgradeHookRequired":false,"pendingMigrations":[]},
   {"moduleName":"KontorAI","modulePath":"packages/ai/KontorAI.module.php","component":"ai","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":["Kontor\\AI\\Migrations\\Migration0002CreateExternalApprovalsTable"]},
   {"moduleName":"KontorAPI","modulePath":"packages/api/KontorAPI.module.php","component":"api","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
   {"moduleName":"KontorAutomation","modulePath":"packages/automation/KontorAutomation.module.php","component":"automation","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
@@ -12,7 +12,7 @@
   {"moduleName":"KontorCRM","modulePath":"packages/crm/KontorCRM.module.php","component":"crm","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
   {"moduleName":"KontorDashboard","modulePath":"packages/dashboard/KontorDashboard.module.php","component":"dashboard","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
   {"moduleName":"KontorDemo","modulePath":"packages/demo/KontorDemo.module.php","component":"demo","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
-  {"moduleName":"KontorDocuments","modulePath":"packages/documents/KontorDocuments.module.php","component":"documents","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
+  {"moduleName":"KontorDocuments","modulePath":"packages/documents/KontorDocuments.module.php","component":"documents","sourceVersion":"001","targetVersion": "110","upgradeHookRequired":true,"pendingMigrations":[]},
   {"moduleName":"KontorEntities","modulePath":"packages/entities/KontorEntities.module.php","component":"entities","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
   {"moduleName":"KontorExpenses","modulePath":"packages/expenses/KontorExpenses.module.php","component":"expenses","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},
   {"moduleName":"KontorFiles","modulePath":"packages/files/KontorFiles.module.php","component":"files","sourceVersion":"001","targetVersion": "100","upgradeHookRequired":true,"pendingMigrations":[]},

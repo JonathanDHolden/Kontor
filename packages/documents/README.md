@@ -34,6 +34,11 @@ this table, so it lives entirely in this package.
   document lines), and `{{#if field}}...{{/if}}` conditional sections
   (kontor.md#26). Page breaks and layout are just literal CSS the template
   author writes — the engine doesn't need to know about them.
+- Shared sections use `{{> template.key}}`. `DocumentRenderService` resolves
+  them through the repository for the same organization and requested
+  language, preserving the English fallback. Missing sections and cycles fail
+  closed, and nesting is limited to three includes. `fields()` returns unique
+  non-row placeholders in display order after expanding shared sections.
 - `src/Infrastructure/Rendering/PdfRenderer.php` — wraps
   [`dompdf/dompdf`](https://github.com/dompdf/dompdf) for the "PDF"
   milestone. Chosen over `openspout`/`phpoffice`-style libraries because
@@ -63,6 +68,10 @@ this table, so it lives entirely in this package.
   UID and retaining the immutable snapshot in file metadata. Rendering the
   same template version again creates another file version instead of
   overwriting issued output.
+- Letter and contract previews build their form from the expanded template's
+  fields. When Contacts is installed, the user may bind output to a company;
+  the private PDF is named from the template, company and date and is listed
+  on that company's admin page. Existing invoice-shaped previews are unchanged.
 
 ## Multilingual output
 
@@ -87,7 +96,7 @@ for real in this sandbox, not just skip cleanly. Persistence tests
 `../../docker-compose.test.yml`) and are skipped otherwise, same
 `KONTOR_TEST_DB_DSN` convention as the other packages.
 
-## Not in scope for this substage
+## Not in scope
 
 QR codes and barcodes (kontor.md#26) are part of `KontorDocuments`' full
 eventual feature list, not this substage's milestones (`templates; PDF;
@@ -98,3 +107,8 @@ template engine's capability set (placeholders, loops, conditionals), not
 a WYSIWYG editor. `DocumentSnapshotBuilder` is wired into generated Files
 output, Sales quotation issuance, and invoice/credit-note issuance. Order
 `snapshot_json` remains for its own issue integration.
+
+A first-class contract record (company, exact template version, submitted
+values and draft/sent/signed lifecycle) remains a separate schema and workflow
+feature. Version 1.1.0 deliberately does not invent that persistence model;
+company-bound immutable PDFs provide the requested document relationship now.

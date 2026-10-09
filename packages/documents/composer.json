@@ -3,7 +3,7 @@
     "description": "Kontor Documents: templates, HTML/PDF rendering, multilingual output, immutable issued-document snapshots.",
     "type": "library",
     "license": "MIT",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "authors": [
         {
             "name": "Maxim Semenov",

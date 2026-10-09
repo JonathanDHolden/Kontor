@@ -754,6 +754,15 @@ trait ProcessKontorPlatformTrait
         }
 
         $relationships = $company === null ? [] : $this->companyRelationships($company);
+        $companyFiles = $company !== null
+            && $this->filesReady()
+            && $this->can('kontor-files-file-view')
+            ? $this->filesModule()->fileManager()->forEntity(
+                'company',
+                $company->uid->toString(),
+                $this->organizationUid(),
+            )
+            : [];
 
         return $this->renderTemplate('entity-form', [
             'form' => $form,
@@ -782,6 +791,10 @@ trait ProcessKontorPlatformTrait
             'workspace' => $company === null
                 ? $this->emptyCustomerWorkspace()
                 : $this->customerWorkspace('company', $company->uid->toString()),
+            'companyFiles' => $companyFiles,
+            'canViewCompanyFiles' => $company !== null
+                && $this->filesReady()
+                && $this->can('kontor-files-file-view'),
         ]);
     }
 

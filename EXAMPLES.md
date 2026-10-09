@@ -1,6 +1,28 @@
 # Kontor Integration Examples
 
-These examples target Kontor 1.0.0 and must be checked against the installed version and live site configuration.
+These examples target Kontor 1.1.0 and must be checked against the installed version and live site configuration.
+
+## Render a Document with Shared Sections
+
+```php
+<?php namespace ProcessWire;
+
+if ($modules->isInstalled('KontorDocuments')) {
+    /** @var KontorDocuments $documents */
+    $documents = $modules->get('KontorDocuments');
+    $template = $documents->templateRepository()->findCurrentVersion(
+        $organizationUid,
+        'contract.standard',
+        'en',
+    );
+    if ($template !== null) {
+        $requiredFields = $documents->renderService()->fields($template);
+        $html = $documents->renderService()->renderPreviewHtml($template, $validatedData);
+    }
+}
+```
+
+Template authors may reuse a same-organization section with `{{> contract.terms}}`. Validate every field value and organization identifier before rendering; storing or delivering the output is a separate authorized action.
 
 ## Resolve an Optional Component
 

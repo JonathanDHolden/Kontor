@@ -8,6 +8,9 @@
 /** @var bool $canArchive */
 /** @var bool $canRender */
 /** @var bool $filesReady */
+/** @var string[] $templateFields */
+/** @var \Kontor\Contacts\Domain\Company[] $companies */
+/** @var bool $contactsReady */
 /** @var string $adminUrl */
 /** @var string $csrfName */
 /** @var string $csrfValue */
@@ -27,6 +30,7 @@ $typeLabels = [
     'order' => 'Order',
     'credit_note' => 'Credit note',
     'letter' => 'Business letter',
+    'contract' => 'Contract or agreement',
 ];
 $languageLabels = ['en' => 'English', 'de' => 'German', 'fr' => 'French', 'it' => 'Italian'];
 $editing = $selected !== null;
@@ -40,6 +44,9 @@ $libraryTemplates = array_values(array_filter(
     static fn ($template): bool => $selected === null
         || $template->uid->toString() !== $selected->uid->toString()
 ));
+$dynamicPreview = in_array($documentType, ['letter', 'contract'], true);
+$fieldLabel = static fn (string $field): string => ucwords(str_replace(['_', '.'], [' ', ' · '], $field));
+$longField = static fn (string $field): bool => preg_match('/(?:_details|_description|_terms|_address)$/', $field) === 1;
 ?>
 <div class="ProcessKontor pw-module-workspace kontor-shell">
   <header class="pw-module-head kontor-pagehead">
@@ -54,7 +61,7 @@ $libraryTemplates = array_values(array_filter(
       <div class="pw-module-actions">
         <button class="uk-button uk-button-primary" type="button" uk-toggle="target: #kontor-document-editor">
           <i class="fa fa-<?= $editing ? 'pencil' : 'plus' ?>"></i>
-          <?= $editing ? 'Publish new version' : 'New template' ?>
+          <?= $editing ? 'Edit template' : 'New template' ?>
         </button>
       </div>
     <?php endif; ?>
@@ -95,13 +102,39 @@ $libraryTemplates = array_values(array_filter(
             <form class="uk-form-stacked" method="post" action="<?= $e($adminUrl) ?>documents-preview/">
               <input type="hidden" name="<?= $e($csrfName) ?>" value="<?= $e($csrfValue) ?>">
               <input type="hidden" name="template_uid" value="<?= $e($selected->uid->toString()) ?>">
-              <div class="uk-grid-small" uk-grid>
-                <div class="uk-width-1-1"><label class="uk-form-label" for="document-preview-title">Document title</label><input class="uk-input uk-margin-small-top" id="document-preview-title" name="preview_title" value="Document preview" required></div>
-                <div class="uk-width-1-1 uk-width-1-2@m"><label class="uk-form-label" for="document-preview-customer">Customer</label><input class="uk-input uk-margin-small-top" id="document-preview-customer" name="customer_name" placeholder="Example customer" required></div>
-                <div class="uk-width-1-1 uk-width-1-2@m"><label class="uk-form-label" for="document-preview-amount">Amount</label><input class="uk-input uk-margin-small-top" id="document-preview-amount" name="line_amount" placeholder="1,250.00 USD" required></div>
-                <div class="uk-width-1-1"><label class="uk-form-label" for="document-preview-line">Line description</label><input class="uk-input uk-margin-small-top" id="document-preview-line" name="line_description" placeholder="Consulting services" required></div>
-                <div class="uk-width-1-1"><label class="uk-form-label" for="document-preview-note">Note</label><textarea class="uk-textarea uk-margin-small-top" id="document-preview-note" name="note" rows="3" placeholder="Optional message shown on the document"></textarea></div>
-              </div>
+              <?php if ($dynamicPreview): ?>
+                <div class="uk-grid-small" uk-grid>
+                  <?php foreach ($templateFields as $index => $field): ?>
+                    <div class="uk-width-1-1<?= $longField($field) ? '' : ' uk-width-1-2@m' ?>">
+                      <input type="hidden" name="field_key[]" value="<?= $e($field) ?>">
+                      <label class="uk-form-label" for="document-field-<?= $e((string) $index) ?>"><?= $e($fieldLabel($field)) ?></label>
+                      <?php if ($longField($field)): ?>
+                        <textarea class="uk-textarea uk-margin-small-top" id="document-field-<?= $e((string) $index) ?>" name="field_value[]" rows="4"></textarea>
+                      <?php else: ?>
+                        <input class="uk-input uk-margin-small-top" id="document-field-<?= $e((string) $index) ?>" name="field_value[]">
+                      <?php endif; ?>
+                    </div>
+                  <?php endforeach; ?>
+                  <?php if ($contactsReady): ?>
+                    <div class="uk-width-1-1">
+                      <label class="uk-form-label" for="document-company">Link to company <span class="uk-text-meta">(optional)</span></label>
+                      <select class="uk-select uk-margin-small-top" id="document-company" name="company_uid">
+                        <option value="">Keep the PDF with this template</option>
+                        <?php foreach ($companies as $company): ?><option value="<?= $e($company->uid->toString()) ?>"><?= $e($company->tradingName ?: $company->legalName) ?></option><?php endforeach; ?>
+                      </select>
+                      <div class="uk-text-meta uk-margin-small-top">The generated PDF will appear on the company page. An empty Client name field uses the company name.</div>
+                    </div>
+                  <?php endif; ?>
+                </div>
+              <?php else: ?>
+                <div class="uk-grid-small" uk-grid>
+                  <div class="uk-width-1-1"><label class="uk-form-label" for="document-preview-title">Document title</label><input class="uk-input uk-margin-small-top" id="document-preview-title" name="preview_title" value="Document preview" required></div>
+                  <div class="uk-width-1-1 uk-width-1-2@m"><label class="uk-form-label" for="document-preview-customer">Customer</label><input class="uk-input uk-margin-small-top" id="document-preview-customer" name="customer_name" placeholder="Example customer" required></div>
+                  <div class="uk-width-1-1 uk-width-1-2@m"><label class="uk-form-label" for="document-preview-amount">Amount</label><input class="uk-input uk-margin-small-top" id="document-preview-amount" name="line_amount" placeholder="1,250.00 USD" required></div>
+                  <div class="uk-width-1-1"><label class="uk-form-label" for="document-preview-line">Line description</label><input class="uk-input uk-margin-small-top" id="document-preview-line" name="line_description" placeholder="Consulting services" required></div>
+                  <div class="uk-width-1-1"><label class="uk-form-label" for="document-preview-note">Note</label><textarea class="uk-textarea uk-margin-small-top" id="document-preview-note" name="note" rows="3" placeholder="Optional message shown on the document"></textarea></div>
+                </div>
+              <?php endif; ?>
 
               <ul class="uk-margin" uk-accordion>
                 <li><a class="uk-accordion-title" href>Advanced preview data</a><div class="uk-accordion-content">
@@ -198,7 +231,7 @@ $libraryTemplates = array_values(array_filter(
             <div class="uk-width-1-1 uk-width-1-3@m"><label class="uk-form-label">Document type</label><select class="uk-select uk-margin-small-top" name="document_type" required><?php foreach ($typeLabels as $value => $label): ?><option value="<?= $e($value) ?>"<?= $documentType === $value ? ' selected' : '' ?>><?= $e($label) ?></option><?php endforeach; ?></select></div>
             <div class="uk-width-1-1 uk-width-1-3@m"><label class="uk-form-label">Language</label><select class="uk-select uk-margin-small-top" name="language" required><?php foreach ($languageLabels as $value => $label): ?><option value="<?= $e($value) ?>"<?= $language === $value ? ' selected' : '' ?>><?= $e($label) ?></option><?php endforeach; ?></select></div>
             <div class="uk-width-1-1 uk-width-1-3@m"><label class="uk-form-label">Template key</label><input class="uk-input uk-margin-small-top" name="template_key" value="<?= $e($selected?->templateKey ?? '') ?>" placeholder="invoice.standard" required><div class="uk-text-meta uk-margin-small-top">Stable internal reference; keep it unchanged across versions.</div></div>
-            <div class="uk-width-1-1"><label class="uk-form-label">Document layout</label><textarea class="uk-textarea uk-margin-small-top" name="body_html" rows="12" required><?= $e($selected?->bodyHtml ?? $defaultBody) ?></textarea><div class="uk-text-meta uk-margin-small-top">Use placeholders such as {{title}}, {{customer.name}} and {{#each lines}}…{{/each}}.</div></div>
+            <div class="uk-width-1-1"><label class="uk-form-label">Document layout</label><textarea class="uk-textarea uk-margin-small-top" name="body_html" rows="12" required><?= $e($selected?->bodyHtml ?? $defaultBody) ?></textarea><div class="uk-text-meta uk-margin-small-top">Use placeholders such as {{title}}, {{customer.name}}, {{#each lines}}…{{/each}}, and shared sections such as {{> contract.terms}}.</div></div>
           </div>
           <ul class="uk-margin" uk-accordion><li><a class="uk-accordion-title" href>Advanced styling</a><div class="uk-accordion-content"><label class="uk-form-label">Custom CSS</label><textarea class="uk-textarea uk-margin-small-top" name="custom_css" rows="6"><?= $e($selected?->customCss ?? '') ?></textarea></div></li></ul>
           <div class="uk-flex uk-flex-right uk-grid-small" uk-grid><div><button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button></div><div><button class="uk-button uk-button-primary" type="submit"><i class="fa fa-cloud-upload"></i> <?= $editing ? 'Publish new version' : 'Publish template' ?></button></div></div>

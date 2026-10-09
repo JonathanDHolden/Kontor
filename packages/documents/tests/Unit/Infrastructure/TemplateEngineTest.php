@@ -71,4 +71,66 @@ final class TemplateEngineTest extends TestCase
         $this->assertSame('', $engine->render('{{#if discount}}<p>Discount applied</p>{{/if}}', ['discount' => false]));
         $this->assertSame('', $engine->render('{{#if discount}}<p>Discount applied</p>{{/if}}', []));
     }
+
+    public function test_expands_nested_shared_sections_before_rendering(): void
+    {
+        $sections = [
+            'contract.opening' => '<p>Between us and {{client_name}}</p>{{> contract.signature}}',
+            'contract.signature' => '<p>Signed by {{signatory}}</p>',
+        ];
+        $resolver = static fn (string $key): ?string => $sections[$key] ?? null;
+
+        $html = (new TemplateEngine())->render(
+            '{{> contract.opening}}<p>{{service_details}}</p>',
+            ['client_name' => 'Acme', 'signatory' => 'A. Person', 'service_details' => 'Support'],
+            $resolver,
+        );
+
+        $this->assertSame(
+            '<p>Between us and Acme</p><p>Signed by A. Person</p><p>Support</p>',
+            $html,
+        );
+    }
+
+    public function test_rejects_cycles_missing_sections_and_excessive_depth(): void
+    {
+        $engine = new TemplateEngine();
+        $cycle = null;
+        try {
+            $engine->render('{{> aa}}', [], static fn (string $key): ?string => $key === 'aa' ? '{{> aa}}' : null);
+        } catch (\RuntimeException $exception) {
+            $cycle = $exception;
+        }
+        $this->assertInstanceOf(\RuntimeException::class, $cycle);
+        $this->assertStringContainsString('Circular', $cycle->getMessage());
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('depth exceeds');
+        $engine->render('{{> aa}}', [], static fn (string $key): ?string => [
+            'aa' => '{{> bb}}',
+            'bb' => '{{> cc}}',
+            'cc' => '{{> dd}}',
+            'dd' => 'too deep',
+        ][$key] ?? null);
+    }
+
+    public function test_missing_shared_section_fails_closed(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('was not found');
+
+        (new TemplateEngine())->render('{{> missing}}', [], static fn (): ?string => null);
+    }
+
+    public function test_fields_preserve_order_expand_sections_and_skip_each_rows(): void
+    {
+        $fields = (new TemplateEngine())->fields(
+            '{{title}}{{> shared}}{{#each lines}}{{description}}{{amount}}{{/each}}{{title}}',
+            static fn (string $key): ?string => $key === 'shared'
+                ? '{{#if client_name}}{{client_name}}{{/if}}{{service_details}}'
+                : null,
+        );
+
+        $this->assertSame(['title', 'client_name', 'service_details'], $fields);
+    }
 }

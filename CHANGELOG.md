@@ -2,6 +2,17 @@
 
 All notable changes to Kontor are documented here.
 
+## [1.1.0] - 2026-10-09
+
+### Added
+
+- Root-level, cross-platform discovery wrappers for all 34 optional ProcessWire component modules.
+- Shared document sections, template-derived letter and contract forms, optional company-bound PDFs, and company file listings.
+
+### Fixed
+
+- Resolve admin templates from the module root after the renderer moved into a trait.
+
 ## [1.0.0] - 2026-09-27
 
 ### Added

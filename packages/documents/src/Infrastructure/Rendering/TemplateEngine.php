@@ -19,6 +19,7 @@ namespace Kontor\Documents\Infrastructure\Rendering;
  */
 final class TemplateEngine
 {
+    private const PARTIAL_PATTERN = '/\{\{>\s*([a-zA-Z][a-zA-Z0-9_.-]{1,63})\s*\}\}/';
     private const EACH_PATTERN = '/\{\{#each\s+([a-zA-Z0-9_.]+)\}\}(.*?)\{\{\/each\}\}/s';
     private const IF_PATTERN = '/\{\{#if\s+([a-zA-Z0-9_.]+)\}\}(.*?)\{\{\/if\}\}/s';
     private const VALUE_PATTERN = '/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/';
@@ -26,12 +27,76 @@ final class TemplateEngine
     /**
      * @param array<string, mixed> $data
      */
-    public function render(string $template, array $data): string
+    public function render(string $template, array $data, ?callable $partialResolver = null): string
     {
+        $template = $this->expandPartials($template, $partialResolver);
         $template = $this->renderEach($template, $data);
         $template = $this->renderIf($template, $data);
 
         return $this->renderValues($template, $data);
+    }
+
+    /**
+     * Returns unique top-level form fields in first-use order. Fields inside
+     * repeating sections belong to their row data and are deliberately omitted.
+     *
+     * @return string[]
+     */
+    public function fields(string $template, ?callable $partialResolver = null): array
+    {
+        $template = $this->expandPartials($template, $partialResolver);
+        $template = (string) preg_replace(self::EACH_PATTERN, '', $template);
+        preg_match_all(
+            '/\{\{#if\s+([a-zA-Z0-9_.]+)\}\}|\{\{\s*([a-zA-Z][a-zA-Z0-9_.]*)\s*\}\}/',
+            $template,
+            $matches,
+            PREG_SET_ORDER,
+        );
+
+        $fields = [];
+        foreach ($matches as $match) {
+            $field = $match[1] !== '' ? $match[1] : $match[2];
+            if (!in_array($field, $fields, true)) {
+                $fields[] = $field;
+            }
+        }
+
+        return $fields;
+    }
+
+    private function expandPartials(
+        string $template,
+        ?callable $resolver,
+        int $depth = 0,
+        array $stack = [],
+    ): string {
+        if (!str_contains($template, '{{>')) {
+            return $template;
+        }
+        if ($resolver === null) {
+            throw new \RuntimeException('This document uses shared sections, but no section resolver is configured.');
+        }
+
+        return (string) preg_replace_callback(self::PARTIAL_PATTERN, function (array $matches) use (
+            $resolver,
+            $depth,
+            $stack,
+        ): string {
+            $key = $matches[1];
+            if (in_array($key, $stack, true)) {
+                throw new \RuntimeException('Circular document section include: ' . implode(' -> ', [...$stack, $key]));
+            }
+            if ($depth >= 3) {
+                throw new \RuntimeException('Document section include depth exceeds the limit of 3.');
+            }
+
+            $partial = $resolver($key);
+            if (!is_string($partial)) {
+                throw new \RuntimeException("Document section \"{$key}\" was not found.");
+            }
+
+            return $this->expandPartials($partial, $resolver, $depth + 1, [...$stack, $key]);
+        }, $template) ?? $template;
     }
 
     /**
