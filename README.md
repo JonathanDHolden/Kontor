@@ -49,6 +49,8 @@ Exact PHP calls, stability rules and examples are documented in [API.md](API.md)
 4. Install only the component modules required by the approved site Blueprint; ProcessWire enforces declared module dependencies.
 5. Assign the smallest required `kontor-*` permissions to each role and verify anonymous, member, editor and administrator paths.
 
+The distribution includes a root-level discovery wrapper for every package module. Keep these `Kontor<Name>/Kontor<Name>.module.php` directories beside `packages/` when copying or packaging the repository; they let ProcessWire discover all 34 optional component modules while Composer continues loading their implementation from `packages/`. The wrappers are ordinary PHP files and do not rely on symbolic links, so the same release works on Unix and Windows hosts.
+
 Upgrades are migration-driven. Ordinary uninstall removes module wiring but deliberately preserves business tables and stored data. Back up and explicitly plan any later data removal.
 
 ## Development and Testing
