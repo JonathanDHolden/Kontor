@@ -468,7 +468,7 @@ trait ProcessKontorAuditSupportTrait
 
         extract($variables, EXTR_SKIP);
         ob_start();
-        include __DIR__ . '/templates/admin/' . $name . '.php';
+        include dirname(__DIR__, 3) . '/templates/admin/' . $name . '.php';
 
         return (string) ob_get_clean();
     }
