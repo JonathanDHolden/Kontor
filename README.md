@@ -65,7 +65,7 @@ The release-candidate procedure, package matrix, persistent local ProcessWire en
 
 ## Components
 
-Kontor 1.1.0 contains 35 packages: AI, API, automation, cache, catalog, collaboration, contacts, CRM intake, CRM, dashboard, demo, documents, custom entities, expenses, files, Germany, GraphQL, inventory, invoices, ledger, mail, marketplace, MCP, payments, portal, projects, purchasing, queue, reports, sales, SDK, search, settings, tasks and workflow. SDK is a library; the other 34 packages ship ProcessWire-discoverable module wrappers.
+Kontor 1.1.1 contains 35 packages: AI, API, automation, cache, catalog, collaboration, contacts, CRM intake, CRM, dashboard, demo, documents, custom entities, expenses, files, Germany, GraphQL, inventory, invoices, ledger, mail, marketplace, MCP, payments, portal, projects, purchasing, queue, reports, sales, SDK, search, settings, tasks and workflow. SDK is a library; the other 34 packages ship ProcessWire-discoverable module wrappers.
 
 See [docs/PACKAGES.md](docs/PACKAGES.md) for responsibilities and dependency relationships, and [docs/KONTOR-SPECIFICATION.md](docs/KONTOR-SPECIFICATION.md) for the architecture.
 

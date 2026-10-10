@@ -2,6 +2,12 @@
 
 All notable changes to Kontor are documented here.
 
+## [1.1.1] - 2026-10-10
+
+### Fixed
+
+- Declare the ProcessWire namespace in every component discovery wrapper so ProcessWire resolves the loaded component class as a valid `ProcessWire\Module` during installation.
+
 ## [1.1.0] - 2026-10-09
 
 ### Added

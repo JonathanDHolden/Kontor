@@ -22,6 +22,11 @@ final class ModuleDiscoveryLayoutTest extends TestCase
             self::assertFileExists($wrapper, $moduleName . ' must be visible to ProcessWire module discovery.');
             $source = (string) file_get_contents($wrapper);
             $relativePackage = substr($packageFile, strlen($root) + 1);
+            self::assertMatchesRegularExpression(
+                '/^<\?php\s+declare\(strict_types=1\);\s+namespace ProcessWire;/s',
+                $source,
+                $moduleName . ' wrapper must declare the namespace ProcessWire resolves before loading it.',
+            );
             self::assertStringContainsString(
                 "dirname(__DIR__) . '/{$relativePackage}'",
                 $source,

@@ -1,6 +1,6 @@
 # Kontor Integration Examples
 
-These examples target Kontor 1.1.0 and must be checked against the installed version and live site configuration.
+These examples target Kontor 1.1.1 and must be checked against the installed version and live site configuration.
 
 ## Render a Document with Shared Sections
 

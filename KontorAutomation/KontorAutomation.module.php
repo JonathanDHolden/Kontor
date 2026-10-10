@@ -2,4 +2,6 @@
 
 declare(strict_types=1);
 
+namespace ProcessWire;
+
 require_once dirname(__DIR__) . '/packages/automation/KontorAutomation.module.php';

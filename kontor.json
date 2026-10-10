@@ -4,7 +4,7 @@
     "name": "Kontor",
     "title": "Kontor Core",
     "description": "Service container, capability/component/backup/import/export-provider registries, migrations, audit, backup and recovery, import/export, and the ProcessKontor admin shell.",
-    "version": "1.0.0",
+    "version": "1.1.1",
     "type": "core",
     "category": "core",
     "license": "MIT",

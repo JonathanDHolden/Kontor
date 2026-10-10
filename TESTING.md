@@ -83,7 +83,8 @@ PHPUnit run alone is not an E2E pass.
 
 ## ProcessWire boundary coverage
 
-- [x] Module discovery and metadata
+- [x] Module discovery and metadata, including the namespace ProcessWire parses
+  from every shipped root-level release wrapper
 - [x] Fresh Core install followed by dependency-ordered component install
 - [x] Configuration defaults and save (no module implements configurable
   module state; Kontor Settings migration is tested separately)

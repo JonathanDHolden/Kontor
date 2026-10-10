@@ -1,6 +1,6 @@
 # Kontor release-candidate test status
 
-Last updated: 2026-09-27
+Last updated: 2026-10-10
 
 This is the durable checkpoint for the current full-system test programme. It
 records verified evidence, defects fixed during the run and work that still
@@ -21,6 +21,21 @@ browser route smoke as a substitute for package-level coverage.
   object-storage endpoint was used
 
 ## Automated evidence
+
+### 1.1.1 component-discovery regression
+
+A public installation report from ProcessWire 3.0.274 on PHP 8.4 exposed that
+the 34 root-level discovery wrappers loaded their package implementation but
+did not declare `namespace ProcessWire`. ProcessWire determines the expected
+class namespace from the discovered wrapper itself, so it looked for a global
+class and marked every optional component as not implementing
+`ProcessWire\Module`.
+
+All 34 wrappers now declare the namespace before loading their implementation.
+The regression contract checks every shipped wrapper, and the persistent local
+ProcessWire environment independently parsed every release wrapper with the
+real module loader and resolved 34/34 to classes implementing `Module`. The
+environment files and database were retained.
 
 | Area | Result |
 |---|---:|

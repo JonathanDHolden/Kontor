@@ -1,6 +1,6 @@
 # Kontor Public API
 
-This document describes the supported public integration surface for Kontor 1.1.0 (ProcessWire module version 110). The installed code and live site state still determine availability.
+This document describes the supported public integration surface for Kontor 1.1.1 (ProcessWire module version 111). The installed code and live site state still determine availability.
 
 ## Module Access
 
