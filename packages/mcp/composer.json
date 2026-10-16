@@ -1,7 +1,7 @@
 {
     "name": "kontor/mcp",
     "description": "Scoped MCP Server integration for Kontor business operations.",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "type": "library",
     "license": "MIT",
     "authors": [{"name": "Maxim Semenov", "homepage": "https://github.com/mxmsmnv"}],

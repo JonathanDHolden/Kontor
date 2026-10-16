@@ -4,7 +4,7 @@
     "name": "KontorMCP",
     "title": "Kontor MCP",
     "description": "Full scoped MCP integration for installed Kontor resources, search and settings.",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "type": "platform",
     "category": "integration",
     "license": "MIT",
@@ -25,7 +25,10 @@
         "kontor/settings": "Enables reviewed settings migration over MCP."
     },
     "conflicts": {},
-    "capabilities": [{"name": "mcp-provider", "version": "1.0", "contract": "McpServer provider metadata"}],
+    "capabilities": [
+        {"name": "mcp-provider", "version": "1.0", "contract": "McpServer provider metadata"},
+        {"name": "pocketwire-provider", "version": "1.0", "contract": "Read-only PocketWire provider metadata"}
+    ],
     "permissions": [],
     "admin": {"sections": [], "routes": []},
     "services": ["Kontor\\MCP\\Application\\KontorMcpBridge"],

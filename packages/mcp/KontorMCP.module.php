@@ -17,15 +17,130 @@ class KontorMCP extends WireData implements Module
         return [
             'title' => 'Kontor MCP',
             'summary' => 'Full scoped MCP integration for installed Kontor resources, search and settings.',
-            'version' => '100',
+            'version' => '101',
             'author' => 'Maxim Semenov',
             'href' => 'https://github.com/mxmsmnv/Kontor',
             'icon' => 'exchange',
             'singular' => true,
             'autoload' => true,
             'mcpProvider' => true,
+            'pocketWireProvider' => true,
             'requires' => ['Kontor', 'KontorAPI', 'McpServer'],
         ];
+    }
+
+    /** @return array{id:string,title:string,module:string,moduleVersion:string} */
+    public function pocketWireProviderInfo(): array
+    {
+        return ['id' => 'kontor', 'title' => 'Kontor', 'module' => 'KontorMCP', 'moduleVersion' => '1.0.1'];
+    }
+
+    /** @return array<string,mixed> */
+    public function pocketWireManifest(User $actor): array
+    {
+        $ready = $this->pocketWireCanRead($actor);
+        $base = '/api/pocketwire/v1/providers/kontor/';
+        return [
+            'id' => 'kontor', 'title' => 'Kontor', 'module' => 'KontorMCP', 'moduleVersion' => '1.0.1',
+            'status' => $ready ? 'native_read_only' : 'unsupported',
+            'permissions' => ['scope' => 'providers.read', 'processWire' => ['kontor-access']],
+            'presentation' => ['layout' => 'list', 'icon' => 'business-outline', 'summary' => 'Organization-scoped Kontor component and resource data.', 'accentColor' => '#2563EB'],
+            'resources' => $ready ? [
+                ['id' => 'status', 'title' => 'Status', 'method' => 'GET', 'endpoint' => $base . 'status'],
+                ['id' => 'components', 'title' => 'Components', 'method' => 'GET', 'endpoint' => $base . 'components'],
+                ['id' => 'resources', 'title' => 'Resource metadata', 'method' => 'GET', 'endpoint' => $base . 'resources'],
+                ['id' => 'search', 'title' => 'Search', 'method' => 'GET', 'endpoint' => $base . 'search'],
+                ['id' => 'records', 'title' => 'Resource records', 'method' => 'GET', 'endpoint' => $base . 'records/{id}'],
+                ['id' => 'record', 'title' => 'Resource record', 'method' => 'GET', 'endpoint' => $base . 'record/{id}'],
+            ] : [],
+            'actions' => [],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    public function pocketWireRead(string $resource, string $identifier, array $query, User $actor): array
+    {
+        if (!$this->pocketWireCanRead($actor)) {
+            throw new WirePermissionException('The kontor-access permission is required.');
+        }
+        if ($resource === 'status' && $identifier === '') return $this->mcpKontorStatus();
+        if ($resource === 'components' && $identifier === '') return $this->mcpKontorComponents();
+        if ($resource === 'resources' && $identifier === '') {
+            $result = $this->mcpKontorResources();
+            $items = array_values(array_filter((array)($result['items'] ?? []), fn(array $item): bool => $this->pocketWireCanReadResource((string)($item['resource'] ?? ''), $actor)));
+            return ['items' => $items, 'total' => count($items)];
+        }
+        if ($resource === 'search' && $identifier === '') {
+            $term = mb_substr(trim((string)($query['q'] ?? '')), 0, 200);
+            if (mb_strlen($term) < 2) throw new Wire404Exception('A search query of at least two characters is required.');
+            $rawTypes = array_slice((array)($query['entity_types'] ?? []), 0, 21);
+            $types = array_values(array_filter($rawTypes, static fn(mixed $value): bool => is_string($value) && preg_match('/^[a-z][a-z0-9_.-]{0,63}$/D', $value) === 1));
+            if (count($rawTypes) > 20 || $types === [] || count($types) !== count($rawTypes) || count(array_filter($types, fn(string $type): bool => !$this->pocketWireCanSearchType($type, $actor))) > 0) {
+                throw new WirePermissionException('Explicit permitted Kontor search entity types are required.');
+            }
+            return $this->mcpKontorSearch($term, json_encode($types, JSON_THROW_ON_ERROR), min(50, max(1, (int)($query['limit'] ?? 20))), max(0, min(10000, (int)($query['offset'] ?? 0))));
+        }
+        if ($resource === 'records' && preg_match('/^[a-z][a-z0-9_]{1,63}$/D', $identifier)) {
+            if (!$this->pocketWireCanReadResource($identifier, $actor)) throw new WirePermissionException('The Kontor resource view permission is required.');
+            return $this->mcpKontorRecordsList(
+                $identifier,
+                max(1, (int)($query['page'] ?? 1)),
+                min(50, max(1, (int)($query['limit'] ?? 25))),
+                $this->pocketWireJsonObject($query['filters'] ?? []),
+                $this->pocketWireJsonList($query['sort'] ?? []),
+                $this->pocketWireJsonList($query['fields'] ?? []),
+            );
+        }
+        if ($resource === 'record' && preg_match('/^([a-z][a-z0-9_]{1,63}):([0-9A-HJKMNP-TV-Z]{26})$/D', $identifier, $matches)) {
+            if (!$this->pocketWireCanReadResource($matches[1], $actor)) throw new WirePermissionException('The Kontor resource view permission is required.');
+            return $this->mcpKontorRecordGet($matches[1], $matches[2], $this->pocketWireJsonList($query['fields'] ?? []));
+        }
+        throw new Wire404Exception('Kontor resource was not found.');
+    }
+
+    private function pocketWireCanRead(User $actor): bool
+    {
+        $current = $this->wire()->user;
+        return (int)$current->id === (int)$actor->id
+            && ($actor->isSuperuser() || ($actor->isLoggedin() && $actor->hasPermission('kontor-access')));
+    }
+
+    private function pocketWireCanReadResource(string $resource, User $actor): bool
+    {
+        if ($actor->isSuperuser()) return true;
+        $permission = match ($resource) {
+            'organizations' => 'kontor-access',
+            'contacts' => 'kontor-contacts-contact-view',
+            default => '',
+        };
+        return $permission !== '' && $actor->hasPermission($permission);
+    }
+
+    private function pocketWireCanSearchType(string $type, User $actor): bool
+    {
+        if ($actor->isSuperuser()) return true;
+        $permission = match ($type) {
+            'component' => 'kontor-access',
+            'contact' => 'kontor-contacts-contact-view',
+            'company' => 'kontor-contacts-company-view',
+            'lead' => 'kontor-crm-lead-view',
+            'deal' => 'kontor-crm-deal-view',
+            'catalog_item' => 'kontor-catalog-item-view',
+            default => '',
+        };
+        return $permission !== '' && $actor->hasPermission($permission);
+    }
+
+    private function pocketWireJsonObject(mixed $value): string
+    {
+        if (!is_array($value) || array_is_list($value) && $value !== []) throw new Wire404Exception('A JSON-object query value is required.');
+        return json_encode($value, JSON_THROW_ON_ERROR);
+    }
+
+    private function pocketWireJsonList(mixed $value): string
+    {
+        if (!is_array($value) || !array_is_list($value)) throw new Wire404Exception('A JSON-list query value is required.');
+        return json_encode($value, JSON_THROW_ON_ERROR);
     }
 
     /** @return array{name: string, title: string, version: string} */
@@ -34,7 +149,7 @@ class KontorMCP extends WireData implements Module
         return [
             'name' => 'kontor',
             'title' => 'Kontor business operations',
-            'version' => '1.0.0',
+            'version' => '1.0.1',
         ];
     }
 
