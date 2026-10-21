@@ -79,13 +79,12 @@ $statusLabel = static fn (string $status): string => ucwords(str_replace('_', ' 
       <?php if ($accounts !== []): ?>
         <div class="uk-overflow-auto uk-visible@m uk-margin">
           <table class="uk-table uk-table-divider uk-table-hover uk-table-middle uk-table-small">
-            <thead><tr><th>Customer</th><th>Login email</th><th>Access</th><th>Last sign-in</th><th class="uk-table-shrink"><span class="uk-hidden">Open</span></th></tr></thead>
+            <thead><tr><th>Customer</th><th>Login email</th><th>Access</th><th>Last sign-in</th></tr></thead>
             <tbody><?php foreach ($accounts as $account): $accountUrl = $adminUrl . 'portal/?id=' . rawurlencode($account->uid->toString()); ?><tr>
-              <td><a class="uk-link-reset" href="<?= $e($accountUrl) ?>"><strong><?= $e($contactLabels[$account->contactUid] ?? 'Unavailable contact') ?></strong></a></td>
+              <td><a href="<?= $e($accountUrl) ?>"><strong><?= $e($contactLabels[$account->contactUid] ?? 'Unavailable contact') ?></strong></a></td>
               <td><?= $e($account->email) ?></td>
               <td><span class="uk-label<?= $account->isActive() ? ' uk-label-success' : '' ?>"><?= $e($statusLabel($account->status)) ?></span></td>
               <td><?= $e($account->lastLoginAt?->format('M j, Y · H:i') ?? 'Not yet') ?></td>
-              <td><a class="uk-button uk-button-text" href="<?= $e($accountUrl) ?>" aria-label="Open <?= $e($contactLabels[$account->contactUid] ?? 'portal account') ?>">Open <i class="fa fa-angle-right"></i></a></td>
             </tr><?php endforeach; ?></tbody>
           </table>
         </div>

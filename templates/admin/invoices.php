@@ -94,16 +94,15 @@ $duePresentation = static function ($invoice) use ($today, $isOverdue): array {
     <?php if ($invoices !== []): ?>
       <div class="uk-overflow-auto uk-visible@m">
         <table class="uk-table uk-table-divider uk-table-hover uk-table-middle uk-table-small uk-margin-remove-bottom">
-          <thead><tr><th>Document</th><th>Customer</th><th>Issue date</th><th>Due date</th><th class="uk-text-right">Total</th><th class="uk-text-right">Outstanding</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Document</th><th>Customer</th><th>Issue date</th><th>Due date</th><th class="uk-text-right">Total</th><th class="uk-text-right">Outstanding</th><th>Status</th></tr></thead>
           <tbody><?php foreach ($invoices as $invoice): $due = $duePresentation($invoice); $invoiceUrl = $adminUrl . 'invoice/?id=' . rawurlencode($invoice->uid->toString()); ?><tr>
-            <td><a class="uk-link-reset" href="<?= $e($invoiceUrl) ?>"><strong><?= $e($invoice->number ?? 'Draft invoice') ?></strong><div class="uk-text-meta uk-margin-small-top"><?= $e($invoice->kind === 'credit_note' ? 'Credit note' : 'Invoice') ?></div></a></td>
+            <td><a href="<?= $e($invoiceUrl) ?>"><strong><?= $e($invoice->number ?? 'Draft invoice') ?></strong><div class="uk-text-meta uk-margin-small-top"><?= $e($invoice->kind === 'credit_note' ? 'Credit note' : 'Invoice') ?></div></a></td>
             <td><?= $e($customerLabels[$invoice->customerType . ':' . $invoice->customerUid] ?? 'Customer unavailable') ?></td>
             <td><?= $e($invoice->issueDate?->format('M j, Y') ?? 'Not issued') ?></td>
             <td class="<?= $e($due['class']) ?>"><strong><?= $e($due['label']) ?></strong><div class="uk-text-meta"><?= $e($due['meta']) ?></div></td>
             <td class="uk-text-right"><?= $e($money($invoice->total)) ?></td>
             <td class="uk-text-right"><strong><?= $e($money($invoice->due)) ?></strong></td>
             <td><span class="uk-label<?= $statusClass($invoice->status) ?>"><?= $e($humanize($invoice->status)) ?></span></td>
-            <td><a class="uk-button uk-button-text uk-link-reset" href="<?= $e($invoiceUrl) ?>">Open <i class="fa fa-angle-right"></i></a></td>
           </tr><?php endforeach; ?></tbody>
         </table>
       </div>

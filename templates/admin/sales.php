@@ -66,16 +66,15 @@ $openOrders = count(array_filter($orders, static fn ($order): bool => $order->is
     <?php if ($quotations !== []): ?>
       <div class="uk-overflow-auto uk-visible@m uk-margin-top">
       <table class="uk-table uk-table-divider uk-table-middle uk-table-small uk-margin-remove-bottom">
-        <thead><tr><th>Quotation</th><th>Customer</th><th>Valid until</th><th>Total</th><th>Status</th><th><span class="uk-hidden">Open</span></th></tr></thead>
+        <thead><tr><th>Quotation</th><th>Customer</th><th>Valid until</th><th>Total</th><th>Status</th></tr></thead>
         <tbody>
           <?php foreach ($quotations as $quotation): ?>
             <tr>
-              <td><a class="uk-link-reset" href="<?= $e($adminUrl) ?>sales-quotation/?id=<?= $e(rawurlencode($quotation->uid->toString())) ?>"><strong><?= $e($quotation->number ?? 'Draft quotation') ?></strong></a></td>
+              <td><a href="<?= $e($adminUrl) ?>sales-quotation/?id=<?= $e(rawurlencode($quotation->uid->toString())) ?>"><strong><?= $e($quotation->number ?? 'Draft quotation') ?></strong></a></td>
               <td><?= $e($customer($quotation->customerType, $quotation->customerUid)) ?></td>
               <td><?= $e($quotation->validUntil?->format('M j, Y') ?? 'No expiry') ?></td>
               <td><?= $e($money($quotation->total)) ?></td>
               <td><span class="uk-label<?= $statusClass($quotation->status) ?>"><?= $e($humanize($quotation->status)) ?></span></td>
-              <td class="uk-text-right"><a class="uk-button uk-button-default uk-button-small uk-link-reset" href="<?= $e($adminUrl) ?>sales-quotation/?id=<?= $e(rawurlencode($quotation->uid->toString())) ?>">Open <i class="fa fa-angle-right"></i></a></td>
             </tr>
           <?php endforeach; ?>
         </tbody>
@@ -105,16 +104,15 @@ $openOrders = count(array_filter($orders, static fn ($order): bool => $order->is
     <?php if ($orders !== []): ?>
       <div class="uk-overflow-auto uk-visible@m uk-margin-top">
       <table class="uk-table uk-table-divider uk-table-middle uk-table-small uk-margin-remove-bottom">
-        <thead><tr><th>Order</th><th>Customer</th><th>Delivery</th><th>Total</th><th>Progress</th><th><span class="uk-hidden">Open</span></th></tr></thead>
+        <thead><tr><th>Order</th><th>Customer</th><th>Delivery</th><th>Total</th><th>Progress</th></tr></thead>
         <tbody>
           <?php foreach ($orders as $order): ?>
             <tr>
-              <td><a class="uk-link-reset" href="<?= $e($adminUrl) ?>sales-order/?id=<?= $e(rawurlencode($order->uid->toString())) ?>"><strong><?= $e($order->number ?? 'Pending order') ?></strong></a></td>
+              <td><a href="<?= $e($adminUrl) ?>sales-order/?id=<?= $e(rawurlencode($order->uid->toString())) ?>"><strong><?= $e($order->number ?? 'Pending order') ?></strong></a></td>
               <td><?= $e($customer($order->customerType, $order->customerUid)) ?></td>
               <td><?= $e($order->expectedDeliveryDate?->format('M j, Y') ?? 'Not scheduled') ?></td>
               <td><?= $e($money($order->total)) ?></td>
               <td><span class="uk-label<?= $statusClass($order->orderStatus) ?>"><?= $e($humanize($order->orderStatus)) ?></span><div class="uk-text-meta uk-margin-small-top"><?= $e($humanize($order->paymentStatus)) ?> · <?= $e($humanize($order->fulfillmentStatus)) ?></div></td>
-              <td class="uk-text-right"><a class="uk-button uk-button-default uk-button-small uk-link-reset" href="<?= $e($adminUrl) ?>sales-order/?id=<?= $e(rawurlencode($order->uid->toString())) ?>">Open <i class="fa fa-angle-right"></i></a></td>
             </tr>
           <?php endforeach; ?>
         </tbody>

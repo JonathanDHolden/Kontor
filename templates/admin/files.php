@@ -147,15 +147,14 @@ $filtersActive = $query !== '' || $selectedClassification !== null || $selectedS
       <?php if ($files !== []): ?>
         <div class="uk-overflow-auto uk-visible@m">
           <table class="uk-table uk-table-divider uk-table-hover uk-table-middle uk-table-small">
-            <thead><tr><th>File</th><th>Connected record</th><th>Classification</th><th>Version</th><th>Size</th><th>Status</th><th class="uk-table-shrink"><span class="uk-hidden">Open</span></th></tr></thead>
+            <thead><tr><th>File</th><th>Connected record</th><th>Classification</th><th>Version</th><th>Size</th><th>Status</th></tr></thead>
             <tbody><?php foreach ($files as $file): $fileUrl = $adminUrl . 'files/?id=' . rawurlencode((string) $file['uid']); ?><tr>
-              <td><a class="uk-link-reset" href="<?= $e($fileUrl) ?>"><div class="uk-flex uk-flex-middle uk-grid-small" uk-grid><div><span class="fa fa-<?= $e($fileIcon($file['mime_type'] ?? null)) ?> fa-lg uk-text-muted"></span></div><div><strong><?= $e($file['original_name']) ?></strong><div class="uk-text-meta"><?= $e($fileTypeLabel($file['mime_type'] ?? null)) ?> · <?= $e($humanize((string) ($file['visibility'] ?? 'private'))) ?></div></div></div></a></td>
+              <td><a href="<?= $e($fileUrl) ?>"><div class="uk-flex uk-flex-middle uk-grid-small" uk-grid><div><span class="fa fa-<?= $e($fileIcon($file['mime_type'] ?? null)) ?> fa-lg uk-text-muted"></span></div><div><strong><?= $e($file['original_name']) ?></strong><div class="uk-text-meta"><?= $e($fileTypeLabel($file['mime_type'] ?? null)) ?> · <?= $e($humanize((string) ($file['visibility'] ?? 'private'))) ?></div></div></div></a></td>
               <td><?= $entityLink($file) ?></td>
               <td><?= $e($humanize((string) ($file['classification'] ?? ''))) ?></td>
               <td>v<?= $e((string) $file['version_number']) ?></td>
               <td><?= $e($formatBytes((int) $file['size_bytes'])) ?></td>
               <td><span class="uk-label<?= $file['archived_at'] === null ? ' uk-label-success' : '' ?>"><?= $e($file['archived_at'] === null ? 'Active' : 'Archived') ?></span></td>
-              <td><a class="uk-button uk-button-text" href="<?= $e($fileUrl) ?>">Open <i class="fa fa-angle-right"></i></a></td>
             </tr><?php endforeach; ?></tbody>
           </table>
         </div>

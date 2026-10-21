@@ -146,14 +146,13 @@ $scopeUrl = static function (string $scope) use ($adminUrl, $archived): string {
     <?php if ($tasks !== []): ?>
       <div class="uk-overflow-auto uk-visible@m">
         <table class="uk-table uk-table-divider uk-table-hover uk-table-middle uk-table-small">
-          <thead><tr><th>Task</th><th>Owner</th><th>Due</th><th>Priority</th><th>Status</th><th class="uk-table-shrink"><span class="uk-hidden">Open</span></th></tr></thead>
+          <thead><tr><th>Task</th><th>Owner</th><th>Due</th><th>Priority</th><th>Status</th></tr></thead>
           <tbody><?php foreach ($tasks as $task): $due = $duePresentation($task); $taskUrl = $adminUrl . 'task/?id=' . rawurlencode($task->uid->toString()) . ($archived ? '&archived=1' : ''); ?><tr>
-            <td><strong><?= $e($task->title) ?></strong><div class="uk-text-meta uk-margin-small-top"><?= $e($description($task->description)) ?><?= $task->recurrenceRule !== null ? ' · Repeats ' . $e($humanize($task->recurrenceRule)) : '' ?></div></td>
+            <td><a href="<?= $e($taskUrl) ?>"><strong><?= $e($task->title) ?></strong></a><div class="uk-text-meta uk-margin-small-top"><?= $e($description($task->description)) ?><?= $task->recurrenceRule !== null ? ' · Repeats ' . $e($humanize($task->recurrenceRule)) : '' ?></div></td>
             <td><?= $e($task->assignedTo !== null ? ($assigneeLabels[$task->assignedTo] ?? 'Former user') : 'Unassigned') ?></td>
             <td class="<?= $e($due['class']) ?>"><strong><?= $e($due['label']) ?></strong><div class="uk-text-meta"><?= $e($due['meta']) ?></div></td>
             <td><span class="uk-text-nowrap <?= $e($priorityClass($task->priority)) ?>"><i class="fa fa-<?= $e($priorityIcon($task->priority)) ?>"></i> <?= $e($humanize($task->priority)) ?></span></td>
             <td><span class="uk-label<?= $statusClass($task->status) ?>"><?= $e($humanize($task->status)) ?></span></td>
-            <td><a class="uk-button uk-button-default uk-button-small uk-link-reset" href="<?= $e($taskUrl) ?>">Open <i class="fa fa-angle-right"></i></a></td>
           </tr><?php endforeach; ?></tbody>
         </table>
       </div>
