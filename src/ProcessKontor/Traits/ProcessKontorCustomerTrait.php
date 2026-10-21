@@ -255,9 +255,15 @@ trait ProcessKontorCustomerTrait
             'entity' => $contact,
             'entityType' => 'contact',
             'relationships' => $relationships,
+            // The repository lists most recently updated first, which is right
+            // for the companies page and wrong for a dropdown: a person
+            // looking for Bromley expects A to Z.
             'availableCompanies' => $contact === null
                 ? []
-                : $this->companyRepository()->findAll($this->organizationUid(), '', 250),
+                : (static function (array $companies): array {
+                    usort($companies, static fn ($a, $b): int => strcasecmp($a->legalName, $b->legalName));
+                    return $companies;
+                })($this->companyRepository()->findAll($this->organizationUid(), '', 250)),
             'addresses' => $contact === null
                 ? []
                 : $this->addressRepository()->forOwner('contact', $contact->uid->toString()),
