@@ -227,6 +227,7 @@ trait ProcessKontorCustomerTrait
             'first_name' => $contact?->firstName ?? '',
             'last_name' => $contact?->lastName ?? '',
             'email' => $contact?->email ?? '',
+            'linkedin' => (string) ($contact?->metadata['linkedin'] ?? ''),
             'phone' => $contact?->phone ?? '',
             'mobile' => $contact?->mobile ?? '',
             'job_title' => $contact?->jobTitle ?? '',

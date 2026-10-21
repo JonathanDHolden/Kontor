@@ -102,6 +102,7 @@ trait ProcessKontorFormsTrait
         $this->addTextField($form, 'first_name', $this->_('First name'), $contact?->firstName, false, 50);
         $this->addTextField($form, 'last_name', $this->_('Last name'), $contact?->lastName, false, 50);
         $this->addEmailField($form, 'email', $this->_('Email'), $contact?->email, 50);
+        $this->addTextField($form, 'linkedin', $this->_('LinkedIn'), (string) ($contact?->metadata['linkedin'] ?? ''), false, 255);
         $this->addTextField($form, 'phone', $this->_('Phone'), $contact?->phone, false, 50);
         $this->addTextField($form, 'mobile', $this->_('Mobile'), $contact?->mobile, false, 50);
         $this->addTextField($form, 'job_title', $this->_('Job title'), $contact?->jobTitle, false, 50);
@@ -591,6 +592,19 @@ trait ProcessKontorFormsTrait
         $contact->jobTitle = $this->formValue($form, 'job_title');
         $contact->status = $this->requiredFormValue($form, 'status');
         $contact->notes = $this->formValue($form, 'notes');
+        // LinkedIn lives in the contact's metadata, so no table change; a
+        // bare "linkedin.com/in/name" gains its scheme, an empty box clears it.
+        $linkedin = trim((string) $this->formValue($form, 'linkedin'));
+        if ($linkedin !== '' && !preg_match('~^https?://~i', $linkedin)) {
+            $linkedin = 'https://' . $linkedin;
+        }
+        $metadata = $contact->metadata;
+        if ($linkedin === '') {
+            unset($metadata['linkedin']);
+        } else {
+            $metadata['linkedin'] = $linkedin;
+        }
+        $contact->metadata = $metadata;
         $this->contactRepository()->save($contact);
 
         return $contact;

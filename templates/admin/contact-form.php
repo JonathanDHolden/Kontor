@@ -98,6 +98,7 @@ $connectedCount = count($workspace['leads']) + count($workspace['deals']) + coun
                 <?php if ($fieldValue('email') !== ''): ?><a class="uk-link-reset" href="mailto:<?= $e($fieldValue('email')) ?>"><i class="fa fa-envelope-o"></i> <?= $e($fieldValue('email')) ?></a><?php endif; ?>
                 <?php $primaryPhone = $fieldValue('mobile') ?: $fieldValue('phone'); ?>
                 <?php if ($primaryPhone !== ''): ?><a class="uk-link-reset" href="tel:<?= $e($primaryPhone) ?>"><i class="fa fa-phone"></i> <?= $e($primaryPhone) ?></a><?php endif; ?>
+                <?php if ($fieldValue('linkedin') !== ''): ?><a class="uk-link-reset" href="<?= $e($fieldValue('linkedin')) ?>" target="_blank" rel="noopener"><i class="fa fa-linkedin-square"></i> LinkedIn</a><?php endif; ?>
               </div>
             </div>
           </div>
@@ -155,6 +156,7 @@ $connectedCount = count($workspace['leads']) + count($workspace['deals']) + coun
           <header class="kontor-sectionhead"><div><p class="kontor-eyebrow">Communication</p><h3>How to reach this person</h3></div></header>
           <div class="kontor-nativeform kontor-nativeform--embedded">
             <?php $field('email', 'Email', 'Primary address for messages and duplicate detection.', 'Use a direct business address when possible.', 'email'); ?>
+            <?php $field('linkedin', 'LinkedIn', 'The person’s profile address, for when email is not published.', '', 'url'); ?>
             <?php $field('phone', 'Phone', 'Main office or switchboard number.'); ?>
             <?php $field('mobile', 'Mobile', 'Direct number for time-sensitive communication.', 'Include the country code for international teams.'); ?>
           </div>
