@@ -381,6 +381,7 @@ trait ProcessKontorCustomerTrait
             'page' => $page,
             'totalPages' => $totalPages,
             'totalRecords' => $totalRecords,
+            'companyFields' => $this->companyFields(),
         ]);
     }
 

@@ -178,6 +178,7 @@ final class CompanyRepository implements RepositoryInterface
                 OR email LIKE :query
                 OR phone LIKE :query
                 OR registration_number LIKE :query
+                OR metadata_json LIKE :query
             )';
         }
 
@@ -228,6 +229,7 @@ final class CompanyRepository implements RepositoryInterface
                 OR email LIKE :query
                 OR phone LIKE :query
                 OR registration_number LIKE :query
+                OR metadata_json LIKE :query
             )';
         }
 

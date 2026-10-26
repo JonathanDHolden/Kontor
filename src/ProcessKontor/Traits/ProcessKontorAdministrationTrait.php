@@ -326,6 +326,7 @@ trait ProcessKontorAdministrationTrait
                 $organization->defaultCurrency = $currency;
                 $organization->timezone = $timezone;
                 $organization->settings['dateFormat'] = $this->requiredFormValue($form, 'date_format');
+                $organization->settings['companyFields'] = $this->parseCompanyFields((string) $this->formValue($form, 'company_fields'));
                 $current = $this->organizationAuditSnapshot($organization);
 
                 if ($previous !== $current) {

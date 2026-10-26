@@ -146,6 +146,7 @@ trait ProcessKontorAuditSupportTrait
             'phone' => $company->phone,
             'status' => $company->status,
             'registrationNumber' => $company->registrationNumber,
+            'fields' => $company->metadata['fields'] ?? [],
         ];
     }
 
@@ -347,6 +348,7 @@ trait ProcessKontorAuditSupportTrait
             'defaultCurrency' => $organization->defaultCurrency,
             'timezone' => $organization->timezone,
             'dateFormat' => $organization->settings['dateFormat'] ?? 'Y-m-d',
+            'companyFields' => $organization->settings['companyFields'] ?? [],
         ];
     }
 

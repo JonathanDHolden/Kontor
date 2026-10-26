@@ -7,6 +7,7 @@
 /** @var int $page */
 /** @var int $totalPages */
 /** @var int $totalRecords */
+/** @var array<string, string> $companyFields */
 /** @var string $adminUrl */
 /** @var string $csrfName */
 /** @var string $csrfValue */
@@ -91,6 +92,9 @@ $hasFilters = $query !== '' || $selectedStatus !== '';
           <tr>
             <th>Company</th>
             <th>Contact</th>
+            <?php foreach ($companyFields as $label): ?>
+              <th><?= $e($label) ?></th>
+            <?php endforeach; ?>
             <th>Registration</th>
             <th>Status</th>
             <th><span class="kontor-visually-hidden">Actions</span></th>
@@ -114,6 +118,10 @@ $hasFilters = $query !== '' || $selectedStatus !== '';
                 <?= $e($company->email ?: '—') ?>
                 <?php if ($company->phone): ?><span class="kontor-secondary"><?= $e($company->phone) ?></span><?php endif; ?>
               </td>
+              <?php foreach ($companyFields as $key => $label): ?>
+                <?php $fieldValue = $company->metadata['fields'][$key] ?? ''; ?>
+                <td class="kontor-companyfield"><?= is_string($fieldValue) && $fieldValue !== '' ? $e($fieldValue) : '—' ?></td>
+              <?php endforeach; ?>
               <td><?= $e($company->registrationNumber ?: $company->vatNumber ?: '—') ?></td>
               <td>
                 <?php if ($showArchived): ?>

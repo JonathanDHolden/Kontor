@@ -127,6 +127,11 @@ trait ProcessKontorFormsTrait
         $this->addTextField($form, 'website', $this->_('Website'), $company?->website, false, 50);
         $this->addTextField($form, 'vat_number', $this->_('VAT number'), $company?->vatNumber, false, 50);
         $this->addStatusField($form, $company?->status ?? 'active');
+
+        foreach ($this->companyFields() as $key => $label) {
+            $value = $company?->metadata['fields'][$key] ?? null;
+            $this->addTextField($form, 'field_' . $key, $label, is_string($value) ? $value : null, false, 50);
+        }
         $this->addTextareaField($form, 'notes', $this->_('Notes'), $company?->notes);
         $this->addSubmit($form, $this->_('Save company'));
 
@@ -565,9 +570,73 @@ trait ProcessKontorFormsTrait
             $dateFormat,
             50
         );
+        $this->addTextareaField(
+            $form,
+            'company_fields',
+            $this->_('Company fields'),
+            implode("\n", $this->companyFields($organization)),
+            50
+        );
+        $companyFields = $form->getChildByName('company_fields');
+
+        if ($companyFields !== null) {
+            $companyFields->rows = 4;
+            $companyFields->description = $this->_('Extra one-line text fields on every company, one label per line. They appear on the company form and the Companies list, and the search box matches them.');
+        }
         $this->addSubmit($form, $this->_('Save organization'));
 
         return $form;
+    }
+
+    /**
+     * Extra text fields on every company, set on the organization page
+     * ("Company fields", one label per line) and kept in the organization's
+     * settings['companyFields'] as key => label. A company's values live in
+     * its metadata['fields'][key], so no schema changes.
+     *
+     * @return array<string, string>
+     */
+    private function companyFields(?Organization $organization = null): array
+    {
+        $organization ??= $this->organization();
+        $fields = $organization->settings['companyFields'] ?? [];
+
+        if (!is_array($fields)) {
+            return [];
+        }
+
+        return array_filter($fields, static fn (mixed $label, mixed $key): bool => is_string($label) && is_string($key), ARRAY_FILTER_USE_BOTH);
+    }
+
+    /**
+     * One label per line into key => label. The key is the label in
+     * lower case with runs of anything but letters and digits as underscores,
+     * so "OAP and audit" is kept under oap_and_audit even if its label is
+     * later retyped with different spacing.
+     *
+     * @return array<string, string>
+     */
+    private function parseCompanyFields(string $lines): array
+    {
+        $fields = [];
+
+        foreach (preg_split('/\r?\n/', $lines) ?: [] as $line) {
+            $label = trim($line);
+
+            if ($label === '') {
+                continue;
+            }
+
+            $key = trim((string) preg_replace('/[^a-z0-9]+/', '_', strtolower($label)), '_');
+
+            if ($key === '' || isset($fields[$key])) {
+                continue;
+            }
+
+            $fields[$key] = $label;
+        }
+
+        return $fields;
     }
 
     private function saveContactFromForm(InputfieldForm $form, ?Contact $contact): Contact
@@ -614,6 +683,24 @@ trait ProcessKontorFormsTrait
         $company->vatNumber = $this->formValue($form, 'vat_number');
         $company->status = $this->requiredFormValue($form, 'status');
         $company->notes = $this->formValue($form, 'notes');
+        $fields = $company->metadata['fields'] ?? [];
+        $fields = is_array($fields) ? $fields : [];
+
+        foreach (array_keys($this->companyFields()) as $key) {
+            $value = $this->formValue($form, 'field_' . $key);
+
+            if ($value === null || $value === '') {
+                unset($fields[$key]);
+            } else {
+                $fields[$key] = $value;
+            }
+        }
+
+        if ($fields === []) {
+            unset($company->metadata['fields']);
+        } else {
+            $company->metadata['fields'] = $fields;
+        }
         $this->companyRepository()->save($company);
 
         return $company;
