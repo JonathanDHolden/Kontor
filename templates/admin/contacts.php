@@ -176,7 +176,8 @@ $directoryTitle = $showArchived
                   <div class="uk-margin-small-top"><i class="fa fa-phone uk-text-muted uk-margin-small-right"></i><?= $e($contact->mobile ?: $contact->phone ?: 'No phone') ?></div>
                   <?php $linkedin = (string) ($contact->metadata['linkedin'] ?? ''); ?>
                   <?php if ($linkedin !== ''): ?>
-                    <div class="uk-margin-small-top"><i class="fa fa-linkedin uk-text-muted uk-margin-small-right"></i><a href="<?= $e($linkedin) ?>" target="_blank" rel="noopener noreferrer">LinkedIn profile<span class="kontor-visually-hidden"> of <?= $e($contact->displayName) ?></span></a></div>
+                    <?php $activity = preg_match('~^https?://(www\.)?linkedin\.com/in/[^/?#]+~i', $linkedin, $profileMatch) ? $profileMatch[0] . '/recent-activity/all/' : ''; ?>
+                    <div class="uk-margin-small-top"><i class="fa fa-linkedin uk-text-muted uk-margin-small-right"></i><a href="<?= $e($linkedin) ?>" target="_blank" rel="noopener noreferrer">LinkedIn profile<span class="kontor-visually-hidden"> of <?= $e($contact->displayName) ?></span></a><?php if ($activity !== ''): ?> · <a href="<?= $e($activity) ?>" target="_blank" rel="noopener noreferrer">Posts<span class="kontor-visually-hidden"> by <?= $e($contact->displayName) ?></span></a><?php endif; ?></div>
                   <?php endif; ?>
                 </div>
               </td>
