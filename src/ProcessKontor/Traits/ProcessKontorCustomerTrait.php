@@ -102,6 +102,7 @@ trait ProcessKontorCustomerTrait
             (string) $this->wire()->input->get('status'),
             ['active', 'inactive']
         ) ?? '');
+        $withLinkedIn = (string) $this->wire()->input->get('linkedin') === '1';
         $organizationUid = $this->organizationUid();
         $pageSize = 25;
         $totalRecords = $this->contactRepository()->countMatching(
@@ -109,29 +110,35 @@ trait ProcessKontorCustomerTrait
             $query,
             $showArchived,
             $status,
+            $withLinkedIn,
         );
         $totalPages = max(1, (int) ceil($totalRecords / $pageSize));
         $page = min($totalPages, max(1, (int) $this->wire()->input->get('page')));
+        $contacts = $showArchived
+            ? $this->contactRepository()->findArchived(
+                $organizationUid,
+                $query,
+                $pageSize,
+                ($page - 1) * $pageSize,
+                $status,
+                $withLinkedIn,
+            )
+            : $this->contactRepository()->findAll(
+                $organizationUid,
+                $query,
+                $pageSize,
+                ($page - 1) * $pageSize,
+                $status,
+                $withLinkedIn,
+            );
 
         return $this->renderTemplate('contacts', [
-            'contacts' => $showArchived
-                ? $this->contactRepository()->findArchived(
-                    $organizationUid,
-                    $query,
-                    $pageSize,
-                    ($page - 1) * $pageSize,
-                    $status,
-                )
-                : $this->contactRepository()->findAll(
-                    $organizationUid,
-                    $query,
-                    $pageSize,
-                    ($page - 1) * $pageSize,
-                    $status,
-                ),
+            'contacts' => $contacts,
+            'companyNames' => $this->contactCompanyNames($contacts),
             'query' => $query,
             'selectedStatus' => $status,
             'showArchived' => $showArchived,
+            'withLinkedIn' => $withLinkedIn,
             'page' => $page,
             'totalPages' => $totalPages,
             'totalRecords' => $totalRecords,
@@ -144,6 +151,10 @@ trait ProcessKontorCustomerTrait
                 'inactive' => $this->contactRepository()->countMatching(
                     $organizationUid,
                     status: 'inactive',
+                ),
+                'linkedin' => $this->contactRepository()->countMatching(
+                    $organizationUid,
+                    withLinkedIn: true,
                 ),
                 'archived' => $this->contactRepository()->countMatching(
                     $organizationUid,
@@ -336,6 +347,37 @@ trait ProcessKontorCustomerTrait
             ? $this->_('Local AI contact brief generated.')
             : $this->_('AI contact brief generated.'));
         $this->wire()->session->redirect('../contact/?id=' . rawurlencode($uid));
+    }
+
+    /**
+     * The current companies of a page of contacts, for the list: contact uid
+     * => company names joined with ", ".
+     *
+     * @param \Kontor\Contacts\Domain\Contact[] $contacts
+     * @return array<string, string>
+     */
+    private function contactCompanyNames(array $contacts): array
+    {
+        if ($contacts === []) {
+            return [];
+        }
+        $uids = array_map(static fn ($c): string => $c->uid->toString(), $contacts);
+        $marks = implode(',', array_fill(0, count($uids), '?'));
+        $statement = $this->wire()->database->prepare(
+            'SELECT m.contact_uid, c.legal_name FROM kontor_contact_company m
+             JOIN kontor_companies c ON c.uid = m.company_uid AND c.deleted_at IS NULL
+             WHERE m.contact_uid IN (' . $marks . ') AND m.ended_at IS NULL
+             ORDER BY c.legal_name'
+        );
+        $statement->execute($uids);
+        $names = [];
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $names[$row['contact_uid']] = isset($names[$row['contact_uid']])
+                ? $names[$row['contact_uid']] . ', ' . $row['legal_name']
+                : $row['legal_name'];
+        }
+
+        return $names;
     }
 
     public function ___executeCompanies(): string

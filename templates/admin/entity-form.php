@@ -192,6 +192,10 @@ if ($entityType === 'contact') {
                 <a href="<?= $e($adminUrl) ?><?= $entityType === 'contact' ? 'company' : 'contact' ?>/?id=<?= $e(rawurlencode($related->uid->toString())) ?>">
                   <?= $e($entityType === 'contact' ? $related->legalName : $related->displayName) ?>
                 </a>
+                <?php $relatedLinkedIn = $entityType === 'company' ? (string) ($related->metadata['linkedin'] ?? '') : ''; ?>
+                <?php if ($relatedLinkedIn !== ''): ?>
+                  <a class="uk-margin-small-left" href="<?= $e($relatedLinkedIn) ?>" target="_blank" rel="noopener noreferrer" title="LinkedIn profile of <?= $e($related->displayName) ?>"><i class="fa fa-linkedin"></i><span class="kontor-visually-hidden">LinkedIn profile</span></a>
+                <?php endif; ?>
                 <span class="kontor-secondary">
                   <?= $e($membership->role ?: 'Member') ?>
                   <?= $membership->department ? ' · ' . $e($membership->department) : '' ?>

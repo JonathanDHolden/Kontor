@@ -7,17 +7,20 @@
 /** @var int $page */
 /** @var int $totalPages */
 /** @var int $totalRecords */
-/** @var array{all: int, active: int, inactive: int, archived: int} $contactCounts */
+/** @var array{all: int, active: int, inactive: int, linkedin: int, archived: int} $contactCounts */
+/** @var array<string, string> $companyNames */
+/** @var bool $withLinkedIn */
 /** @var string $adminUrl */
 /** @var string $csrfName */
 /** @var string $csrfValue */
 /** @var callable $e */
 
-$pageUrl = static function (int $targetPage) use ($query, $selectedStatus, $showArchived): string {
+$pageUrl = static function (int $targetPage) use ($query, $selectedStatus, $showArchived, $withLinkedIn): string {
     $parameters = http_build_query(array_filter([
         'q' => $query,
         'status' => $selectedStatus,
         'archived' => $showArchived ? 1 : '',
+        'linkedin' => $withLinkedIn ? 1 : '',
         'page' => $targetPage,
     ], static fn (string|int $value): bool => $value !== ''));
 
@@ -26,20 +29,22 @@ $pageUrl = static function (int $targetPage) use ($query, $selectedStatus, $show
 $clearSearchParameters = http_build_query(array_filter([
     'status' => $selectedStatus,
     'archived' => $showArchived ? 1 : '',
+    'linkedin' => $withLinkedIn ? 1 : '',
 ], static fn (string|int $value): bool => $value !== ''));
 $clearSearchUrl = $clearSearchParameters === '' ? './' : './?' . $clearSearchParameters;
-$tabUrl = static function (string $status = '', bool $archived = false) use ($query): string {
+$tabUrl = static function (string $status = '', bool $archived = false, bool $linkedin = false) use ($query): string {
     $parameters = http_build_query(array_filter([
         'q' => $query,
         'status' => $status,
         'archived' => $archived ? 1 : '',
+        'linkedin' => $linkedin ? 1 : '',
     ], static fn (string|int $value): bool => $value !== ''));
 
     return $parameters === '' ? './' : './?' . $parameters;
 };
 $directoryTitle = $showArchived
     ? 'Archived contacts'
-    : ($selectedStatus !== '' ? ucfirst($selectedStatus) . ' contacts' : 'Contact directory');
+    : ($withLinkedIn ? 'Contacts on LinkedIn' : ($selectedStatus !== '' ? ucfirst($selectedStatus) . ' contacts' : 'Contact directory'));
 ?>
 <div class="ProcessKontor pw-module-workspace kontor-shell">
   <header class="uk-grid-small uk-flex-middle uk-margin-medium-bottom kontor-contact-listhead" uk-grid>
@@ -77,14 +82,17 @@ $directoryTitle = $showArchived
 
   <nav aria-label="Contact views">
     <ul class="uk-tab uk-margin-remove-bottom">
-      <li<?= !$showArchived && $selectedStatus === '' ? ' class="uk-active"' : '' ?>>
+      <li<?= !$showArchived && !$withLinkedIn && $selectedStatus === '' ? ' class="uk-active"' : '' ?>>
         <a href="<?= $e($tabUrl()) ?>">All <span class="uk-badge"><?= $e($contactCounts['all']) ?></span></a>
       </li>
-      <li<?= !$showArchived && $selectedStatus === 'active' ? ' class="uk-active"' : '' ?>>
+      <li<?= !$showArchived && !$withLinkedIn && $selectedStatus === 'active' ? ' class="uk-active"' : '' ?>>
         <a href="<?= $e($tabUrl('active')) ?>">Active <span class="uk-badge"><?= $e($contactCounts['active']) ?></span></a>
       </li>
-      <li<?= !$showArchived && $selectedStatus === 'inactive' ? ' class="uk-active"' : '' ?>>
+      <li<?= !$showArchived && !$withLinkedIn && $selectedStatus === 'inactive' ? ' class="uk-active"' : '' ?>>
         <a href="<?= $e($tabUrl('inactive')) ?>">Inactive <span class="uk-badge"><?= $e($contactCounts['inactive']) ?></span></a>
+      </li>
+      <li<?= !$showArchived && $withLinkedIn ? ' class="uk-active"' : '' ?>>
+        <a href="<?= $e($tabUrl('', false, true)) ?>">On LinkedIn <span class="uk-badge"><?= $e($contactCounts['linkedin']) ?></span></a>
       </li>
       <li<?= $showArchived ? ' class="uk-active"' : '' ?>>
         <a href="<?= $e($tabUrl('', true)) ?>">Archive <span class="uk-badge"><?= $e($contactCounts['archived']) ?></span></a>
@@ -96,6 +104,7 @@ $directoryTitle = $showArchived
     <form class="uk-form-stacked uk-margin-bottom" method="get" action="./" role="search">
       <?php if ($showArchived): ?><input type="hidden" name="archived" value="1"><?php endif; ?>
       <?php if (!$showArchived && $selectedStatus !== ''): ?><input type="hidden" name="status" value="<?= $e($selectedStatus) ?>"><?php endif; ?>
+      <?php if (!$showArchived && $withLinkedIn): ?><input type="hidden" name="linkedin" value="1"><?php endif; ?>
       <div class="uk-grid-small uk-flex-middle" uk-grid>
         <div class="uk-width-1-1 uk-width-expand@s">
           <div class="uk-search uk-search-default uk-width-1-1">
@@ -156,11 +165,19 @@ $directoryTitle = $showArchived
                   </span>
                 </div>
               </td>
-              <td data-label="Work"><?= $e($contact->jobTitle ?: 'No role specified') ?></td>
+              <td data-label="Work">
+                <?= $e($contact->jobTitle ?: 'No role specified') ?>
+                <?php $companyName = $companyNames[$contact->uid->toString()] ?? ''; ?>
+                <?php if ($companyName !== ''): ?><span class="uk-text-meta uk-display-block"><?= $e($companyName) ?></span><?php endif; ?>
+              </td>
               <td data-label="Contact details">
                 <div class="uk-text-small">
                   <div><i class="fa fa-envelope uk-text-muted uk-margin-small-right"></i><?= $e($contact->email ?: 'No email') ?></div>
                   <div class="uk-margin-small-top"><i class="fa fa-phone uk-text-muted uk-margin-small-right"></i><?= $e($contact->mobile ?: $contact->phone ?: 'No phone') ?></div>
+                  <?php $linkedin = (string) ($contact->metadata['linkedin'] ?? ''); ?>
+                  <?php if ($linkedin !== ''): ?>
+                    <div class="uk-margin-small-top"><i class="fa fa-linkedin uk-text-muted uk-margin-small-right"></i><a href="<?= $e($linkedin) ?>" target="_blank" rel="noopener noreferrer">LinkedIn profile<span class="kontor-visually-hidden"> of <?= $e($contact->displayName) ?></span></a></div>
+                  <?php endif; ?>
                 </div>
               </td>
               <td data-label="Status">

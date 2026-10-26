@@ -136,9 +136,10 @@ final class ContactRepository implements RepositoryInterface
         int $limit = 100,
         int $offset = 0,
         string $status = '',
+        bool $withLinkedIn = false,
     ): array
     {
-        return $this->findList($organizationUid, $query, false, $limit, $offset, $status);
+        return $this->findList($organizationUid, $query, false, $limit, $offset, $status, $withLinkedIn);
     }
 
     /**
@@ -150,9 +151,10 @@ final class ContactRepository implements RepositoryInterface
         int $limit = 100,
         int $offset = 0,
         string $status = '',
+        bool $withLinkedIn = false,
     ): array
     {
-        return $this->findList($organizationUid, $query, true, $limit, $offset, $status);
+        return $this->findList($organizationUid, $query, true, $limit, $offset, $status, $withLinkedIn);
     }
 
     /**
@@ -165,6 +167,7 @@ final class ContactRepository implements RepositoryInterface
         int $limit,
         int $offset,
         string $status,
+        bool $withLinkedIn = false,
     ): array
     {
         $organizationId = $this->organizations->internalIdOf($organizationUid);
@@ -188,6 +191,12 @@ final class ContactRepository implements RepositoryInterface
 
         if ($status !== '') {
             $sql .= ' AND status = :status';
+        }
+
+        if ($withLinkedIn) {
+            // The LinkedIn address lives in metadata (see the contact form), so
+            // "has a LinkedIn profile" is a key in the JSON.
+            $sql .= ' AND metadata_json LIKE \'%"linkedin":"%\'';
         }
 
         $sql .= ' ORDER BY updated_at DESC, display_name ASC LIMIT :limit OFFSET :offset';
@@ -217,6 +226,7 @@ final class ContactRepository implements RepositoryInterface
         string $query = '',
         bool $archived = false,
         string $status = '',
+        bool $withLinkedIn = false,
     ): int
     {
         $organizationId = $this->organizations->internalIdOf($organizationUid);
@@ -238,6 +248,12 @@ final class ContactRepository implements RepositoryInterface
 
         if ($status !== '') {
             $sql .= ' AND status = :status';
+        }
+
+        if ($withLinkedIn) {
+            // The LinkedIn address lives in metadata (see the contact form), so
+            // "has a LinkedIn profile" is a key in the JSON.
+            $sql .= ' AND metadata_json LIKE \'%"linkedin":"%\'';
         }
 
         $statement = $this->pdo->prepare($sql);
