@@ -41,7 +41,9 @@ $field = static function (
     string $note = '',
     string $type = 'text',
     bool $required = false,
-    bool $wide = false
+    bool $wide = false,
+    string $link = '',
+    string $linkLabel = ''
 ) use ($e, $fieldValue): void {
     ?>
     <label class="kontor-nativefield<?= $wide ? ' kontor-nativefield--wide' : '' ?>">
@@ -53,6 +55,7 @@ $field = static function (
         <input class="uk-input" type="<?= $e($type) ?>" name="<?= $e($name) ?>" value="<?= $e($fieldValue($name)) ?>"<?= $required ? ' required' : '' ?>>
       <?php endif; ?>
       <?php if ($note !== ''): ?><small class="kontor-field-note"><strong>Note:</strong> <?= $e($note) ?></small><?php endif; ?>
+      <?php if ($link !== ''): ?><small class="kontor-field-note"><a href="<?= $e($link) ?>" target="_blank" rel="noopener noreferrer"><i class="fa fa-external-link uk-margin-small-right"></i><?= $e($linkLabel !== '' ? $linkLabel : 'Open') ?></a></small><?php endif; ?>
     </label>
     <?php
 };
@@ -156,7 +159,7 @@ $connectedCount = count($workspace['leads']) + count($workspace['deals']) + coun
           <header class="kontor-sectionhead"><div><p class="kontor-eyebrow">Communication</p><h3>How to reach this person</h3></div></header>
           <div class="kontor-nativeform kontor-nativeform--embedded">
             <?php $field('email', 'Email', 'Primary address for messages and duplicate detection.', 'Use a direct business address when possible.', 'email'); ?>
-            <?php $field('linkedin', 'LinkedIn', 'The person’s profile address, for when email is not published.', '', 'url'); ?>
+            <?php $field('linkedin', 'LinkedIn', 'The person’s profile address, for when email is not published.', '', 'url', false, false, $fieldValue('linkedin'), 'Open the profile on LinkedIn'); ?>
             <?php $field('phone', 'Phone', 'Main office or switchboard number.'); ?>
             <?php $field('mobile', 'Mobile', 'Direct number for time-sensitive communication.', 'Include the country code for international teams.'); ?>
           </div>
